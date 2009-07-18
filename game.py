@@ -79,6 +79,12 @@ def run_game():
 				exit_game()
 			elif event.type == KEYDOWN and event.key == K_w:
 				pass
+			elif event.type == KEYDOWN and event.key == K_a:
+				pass
+			elif event.type == KEYDOWN and event.key == K_s:
+				pass
+			elif event.type == KEYDOWN and event.key == K_d:
+				pass
 				
 		player.update()
 		screen.blit(background, backgroundRect)
