@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: UTF-8 -*-
 
 import os, sys, math
 from random import randint, choice
@@ -27,28 +27,55 @@ def load_image(name, colorkey=None):
 
 class Player(pygame.sprite.Sprite):
 	
-	def __init__(self, img_filename):
+	def __init__(self, img_filename,pos):
 		
 		pygame.sprite.Sprite.__init__(self)
 
-		self.image, self.image_rect =  load_image(img_filename, -1)
-		self.image = self.image.convert_alpha()
-		self.base_img = self.image
+		self.img, self.img_rect =  load_image(img_filename, -1)
+		self.img = self.img.convert_alpha()
+		self._img = self.img
+		self.img_rect = self.img_rect.move(pos)
+		self.angle = 360
+		self.speed = 2
+		self.x, self.y = self.img_rect.center
 		
-		self.pos = vec2d((300,200))
-		
-	def update(self):
+	def update(self,keys):
+		turn_speed = 5
 		self.rotate()
+		if keys[K_UP] or keys[K_w]:
+			self.x += math.sin(math.radians(self.angle))*- self.speed
+			self.y += math.cos(math.radians(self.angle))*-self.speed
+			if keys[K_RIGHT] or keys[K_d]:
+				self.angle -= turn_speed
+			elif keys[K_LEFT] or keys[K_a]:
+				self.angle += turn_speed
+		elif keys[K_DOWN] or keys[K_s]:
+			self.x += math.sin(math.radians(self.angle))*self.speed
+			self.y += math.cos(math.radians(self.angle))*self.speed
+			if keys[K_RIGHT] or keys[K_d]:
+				self.angle += turn_speed
+			elif keys[K_LEFT] or keys[K_a]:
+				self.angle -= turn_speed
+		elif keys[K_LEFT] or keys[K_a]:
+			self.angle += turn_speed		
+		elif keys[K_RIGHT] or keys[K_d]:
+			self.angle -= turn_speed
+		
+		if self.angle > 360:
+			self.angle = self.angle-360
+		if self.angle <0:
+			self.angle = self.angle+360
+		
+		self.img_rect.center = self.x, self.y
+		
+		x = self.img_rect.centerx
+		y = self.img_rect.centery
 		
 	def rotate(self):
 		# TODO gör rotationen mer flytande och inte hackig
-		pos = pygame.mouse.get_pos()
-		x = pos[0] - self.pos[0]
-		y = pos[1] - self.pos[1]
-		angle = math.atan2(x,y)
-		angle = (angle * 180) / math.pi
-		print x, y
-		self.image = pygame.transform.rotate(self.base_img, -angle)
+		center = self.img_rect.center
+		self.img = pygame.transform.rotozoom(self._img, self.angle, 1.0)
+		self.img_rect = self.img.get_rect(center = center)
 
 def run_game():
 	# Game parameters
@@ -60,35 +87,32 @@ def run_game():
 	pygame.mouse.set_visible(0)
 
 	#Prepare objects
-	player = Player('bluecreep.png')
-
+	player = Player('bluecreep.png',(300,200))
+	
+	
 	#Create The Backgound
 	background,backgroundRect = load_image("background.png")
 
 	#Display The Background
 	pygame.display.flip()
 	clock = pygame.time.Clock()
-
+	#
     # The main game loop
     #
 	while True:
 		clock.tick(60)
+		
+		keys = pygame.key.get_pressed()
 		# TODO Lägg till framåt, strafe och backa
+		
+		
 		for event in pygame.event.get():
 			if event.type == QUIT:
 				exit_game()
-			elif event.type == KEYDOWN and event.key == K_w:
-				pass
-			elif event.type == KEYDOWN and event.key == K_a:
-				pass
-			elif event.type == KEYDOWN and event.key == K_s:
-				pass
-			elif event.type == KEYDOWN and event.key == K_d:
-				pass
 				
-		player.update()
+		player.update(keys)
 		screen.blit(background, backgroundRect)
-		screen.blit(player.image, player.pos)
+		screen.blit(player.img, (player.x, player.y))
 		pygame.display.flip()
 
 
