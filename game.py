@@ -78,7 +78,7 @@ def run_game():
 
 	#Prepare objects
 	player = Player('bluecreep.bmp',position)
-	
+	running = True
 	
 	#Create The Backgound
 	background = load_image("background.bmp")
@@ -90,10 +90,13 @@ def run_game():
 	#
     # The main game loop
     #
-	while True:
+	while running:
 		clock.tick(30)
 		for event in pygame.event.get():
 			
+			if event.type == pygame.QUIT:
+				running = False
+
 			if not hasattr(event, 'key'): continue
 			if event.key == K_ESCAPE: sys.exit(0)
 			down = event.type == KEYDOWN
