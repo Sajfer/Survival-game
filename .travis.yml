@@ -6,7 +6,7 @@ before_install:
     - sudo apt-get build-dep -qq python-pygame
     - sudo apt-get install -qq python-pygame
 install:
-    - pip install -r .travis_requirements.txt
+    - pip install -r requirements.txt
 script:
     - nosetests *.py
 virtualenv:
