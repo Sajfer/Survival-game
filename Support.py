@@ -3,7 +3,7 @@
 import os
 import pygame
 from pygame.locals import RLEACCEL
-from math import atan2, degrees, pi
+import math
 
 
 def load_image(name, colorkey=None):
@@ -22,10 +22,62 @@ def load_image(name, colorkey=None):
     return image
 
 
-def get_angle(pos1, pos2):
-    dx = pos2[0] - pos1[0]
-    dy = pos2[1] - pos1[1]
-    rads = atan2(-dy, dx)
-    rads %= 2 * pi
-    degs = degrees(rads)
-    return degs
+def add(u, v):
+    return [(a + b) for (a, b) in zip(u, v)]
+
+
+def magnitude(v):
+    return math.sqrt(sum(v[i] * v[i] for i in range(len(v))))
+
+
+def sub(u, v):
+    return [(a - b) for (a, b) in zip(u, v)]
+
+
+def normalize(v):
+    vmag = magnitude(v)
+    return [v[i] / vmag for i in range(len(v))]
+
+
+def dot(u, v):
+    return sum((a * b) for a, b in zip(u, v))
+
+
+def angle(v1, v2):
+    return math.acos(dot(v1, v2) / (length(v1) * length(v2)))
+
+
+def length(v):
+    return math.sqrt(dot(v, v))
+
+
+class spritesheet(object):
+    def __init__(self, filename):
+        try:
+            self.sheet = pygame.image.load(filename).convert()
+        except pygame.error as message:
+            print('Unable to load spritesheet image:', filename)
+
+    # Load a specific image from a specific rectangle
+    def image_at(self, rectangle, colorkey=None):
+        "Loads image from x,y,x+offset,y+offset"
+        rect = pygame.Rect(rectangle)
+        image = pygame.Surface(rect.size).convert()
+        image.blit(self.sheet, (0, 0), rect)
+        if colorkey is not None:
+            if colorkey is -1:
+                colorkey = image.get_at((0, 0))
+            image.set_colorkey(colorkey, pygame.RLEACCEL)
+        return image
+
+    # Load a whole bunch of images and return them as a list
+    def images_at(self, rects, colorkey=None):
+        "Loads multiple images, supply a list of coordinates"
+        return [self.image_at(rect, colorkey) for rect in rects]
+
+    # Load a whole strip of images
+    def load_strip(self, rect, image_count, colorkey=None):
+        "Loads a strip of images and returns them as a list"
+        tups = [(rect[0] + rect[2] * x, rect[1], rect[2], rect[3])
+                for x in range(image_count)]
+        return self.images_at(tups, colorkey)

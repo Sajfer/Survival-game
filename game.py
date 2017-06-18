@@ -2,13 +2,12 @@
 
 import sys
 import math
+import os
 # from random import randint, choice
-from Support import load_image, get_angle
+import Support
 
 import pygame
 from pygame.locals import *
-
-from vec2d import vec2d
 
 # TODO Lägg till ett sikte som följer musen
 
@@ -20,14 +19,13 @@ class Player(pygame.sprite.Sprite):
     TURN_SPEED = 20
 
     def __init__(self, image, position):
-        pygame.sprite.Sprite.__init__(self)
-        self.src_image = self.image = load_image(image)
+        super(Player, self).__init__()
+        self.src_image = self.image = Support.load_image(image, (0, 0, 0))
         self.position = position
         self.x, self.y = position
         self.direction = self.speed = 0
         self.k_left = self.k_right = self.k_down = self.k_up = 0
         self.rect = self.src_image.get_rect()
-        self.shots = []
 
     def update(self):
         # UPDATES THE SPRITE
@@ -44,36 +42,36 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = self.position
 
-        for shot in self.shots:
-            shot.update()
-
     def _rotate(self):
         self.direction += (self.k_right + self.k_left)
         if self.direction > 360 or self.direction < -360:
             self.direction = 0
         self.image = pygame.transform.rotate(self.src_image, self.direction)
 
-    def shoot(self, direction):
-        print("Shooting")
-        print(type((320, 240)))
-        self.shots.append(ShotSprite('pinkcreep.png', self.position, (320, 240), 10))
 
-
-class ShotSprite(pygame.sprite.Sprite):
+class Shot(pygame.sprite.Sprite):
     # Sprite for the shots
-    def __init__(self, image, position, direction, speed):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = load_image(image)
-        self.position = position
-        self.x, self.y = position
-        self.direction = 0
+    def __init__(self, image, player_pos, mouse_pos, angle, speed):
+        super(Shot, self).__init__()
+        self.image = image
+        self.x, self.y = player_pos
+        self.direction = angle
         self.speed = speed
         self.rect = self.image.get_rect()
+        self.target_vector = Support.normalize(Support.sub(mouse_pos, player_pos))
+        self._rotate()
+
+    @property
+    def pos(self):
+        return self.x, self.y
+
+    def _rotate(self):
+        self.image = pygame.transform.rotate(self.image, self.direction)
 
     def update(self):
-        self.rad = self.direction * math.pi / 180
-        self.x += -self.speed * math.sin(self.rad)
-        self.y += -self.speed * math.cos(self.rad)
+        move_vector = [c * self.speed for c in Support.normalize(self.target_vector)]
+
+        self.x, self.y = Support.add(self.pos, move_vector)
 
 
 class game(object):
@@ -92,9 +90,8 @@ class game(object):
     def handle_mouse(self, event):
         button_pressed = pygame.mouse.get_pressed()
         if button_pressed[0]:
-            direction = pygame.mouse.get_pos()
-            angle = get_angle(direction, self.player.position)
-            self.player.shoot(angle)
+            mouse_pos = pygame.mouse.get_pos()
+            self.bullets.add(Shot(self.bullet, self.player.position, mouse_pos, self.player.angle, 10))
 
     def handle_keypress(self, event):
         if event.key == K_ESCAPE:
@@ -158,12 +155,21 @@ class game(object):
 
         pygame.mouse.set_cursor((8, 8), (4, 4), (24, 24, 24, 231, 231, 24, 24, 24), (0, 0, 0, 0, 0, 0, 0, 0))
 
+        fullname = os.path.join('images')
+        fullname = os.path.join(fullname, 'M484BulletCollection1.png')
+
+        ss = Support.spritesheet(fullname)
+        self.bullet = ss.image_at((328, 197, 10, 13), (0, 0, 0))
+
+        self.bullets = pygame.sprite.Group()
+
         # Prepare objects
+
         self.player = Player('bluecreep.bmp', position)
         self.running = True
 
         # Create The Backgound
-        background = load_image("background.bmp")
+        background = Support.load_image("background.bmp")
         backgroundRect = background.get_rect()
 
         # Display The Background
@@ -174,6 +180,13 @@ class game(object):
         #
         while self.running:
             clock.tick(30)
+
+            target_vector = Support.normalize(Support.sub(pygame.mouse.get_pos(), self.player.position))
+            aangle = 180 * Support.angle(target_vector, [0, 1]) / math.pi
+            if target_vector[0] < 0:
+                aangle *= -1
+            self.player.angle = aangle
+
             for event in pygame.event.get():
 
                 if event.type == pygame.QUIT:
@@ -186,10 +199,11 @@ class game(object):
 
             screen.blit(background, backgroundRect)
             screen.blit(self.player.image, (self.player.x, self.player.y))
-            for shot in self.player.shots:
-                screen.blit(shot.image, (shot.x, shot.y))
+            for bullet in self.bullets:
+                screen.blit(bullet.image, (bullet.x, bullet.y))
             pygame.display.flip()
             self.player.update()
+            self.bullets.update()
 
     def exit_game(self):
         sys.exit()
