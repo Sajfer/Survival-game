@@ -1,3 +1,2 @@
-
-python3-pygame
+virtualenv
 flake8
