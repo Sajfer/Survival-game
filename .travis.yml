@@ -3,8 +3,8 @@ python:
     - "3.6"
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get build-dep -qq python-pygame
-    - sudo apt-get install -qq python-pygame
+    - sudo apt-get build-dep -qq python3-pygame
+    - sudo apt-get install -qq python3-pygame
 install:
     - pip install -r requirements.txt
 script:
