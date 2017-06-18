@@ -12,4 +12,5 @@ install:
 script:
     - nosetests -v *.py
     - flake8
-
+virtualenv:
+    system_site_packages: true
