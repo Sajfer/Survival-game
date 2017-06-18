@@ -26,6 +26,7 @@ class Player(pygame.sprite.Sprite):
         self.direction = self.speed = 0
         self.k_left = self.k_right = self.k_down = self.k_up = 0
         self.rect = self.src_image.get_rect()
+        self.score = 0
 
     def update(self):
         # UPDATES THE SPRITE
@@ -46,7 +47,7 @@ class Player(pygame.sprite.Sprite):
         self.direction += (self.k_right + self.k_left)
         if self.direction > 360 or self.direction < -360:
             self.direction = 0
-        self.image = pygame.transform.rotate(self.src_image, self.direction)
+        self.image = pygame.transform.rotate(self.src_image, self.angle - 180)
 
 
 class Shot(pygame.sprite.Sprite):
@@ -146,6 +147,7 @@ class game(object):
         WINDOW_HEIGHT, WINDOW_WIDTH = 640, 480
         pygame.init()
         screen = pygame.display.set_mode((WINDOW_HEIGHT, WINDOW_WIDTH))
+        self.myfont = pygame.font.SysFont("monospace", 15)
 
         pygame.display.set_caption('Zombie survival')
         pygame.mouse.set_visible(1)
@@ -159,7 +161,7 @@ class game(object):
         fullname = os.path.join(fullname, 'M484BulletCollection1.png')
 
         ss = Support.spritesheet(fullname)
-        self.bullet = ss.image_at((328, 197, 10, 13), (0, 0, 0))
+        self.bullet = ss.image_at((328, 230, 10, 13), (0, 0, 0))
 
         self.bullets = pygame.sprite.Group()
 
@@ -175,17 +177,25 @@ class game(object):
         # Display The Background
         pygame.display.flip()
         clock = pygame.time.Clock()
+        alive = 0
         #
         # The main game loop
         #
         while self.running:
             clock.tick(30)
 
+            if alive > 10:
+                self.player.score += 1
+                alive = 0
+
             target_vector = Support.normalize(Support.sub(pygame.mouse.get_pos(), self.player.position))
             aangle = 180 * Support.angle(target_vector, [0, 1]) / math.pi
             if target_vector[0] < 0:
                 aangle *= -1
             self.player.angle = aangle
+
+            score = self.myfont.render("Score: {}".format(self.player.score), 1, (0, 0, 0))
+            fps = self.myfont.render("fps: {0:.2f}".format(clock.get_fps()), 1, (0, 0, 0))
 
             for event in pygame.event.get():
 
@@ -199,11 +209,15 @@ class game(object):
 
             screen.blit(background, backgroundRect)
             screen.blit(self.player.image, (self.player.x, self.player.y))
+            screen.blit(score, (0, 0))
+            screen.blit(fps, (0, 20))
             for bullet in self.bullets:
                 screen.blit(bullet.image, (bullet.x, bullet.y))
             pygame.display.flip()
             self.player.update()
             self.bullets.update()
+
+            alive += 1
 
     def exit_game(self):
         sys.exit()
