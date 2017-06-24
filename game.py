@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
 import sys
@@ -8,71 +9,8 @@ import Support
 
 import pygame
 from pygame.locals import *
-
-# TODO Lägg till ett sikte som följer musen
-
-
-class Player(pygame.sprite.Sprite):
-    MAX_FORWARD_SPEED = 5
-    MAX_REVERSE_SPEED = 1
-    ACCELERATION = 2
-    TURN_SPEED = 20
-
-    def __init__(self, image, position):
-        super(Player, self).__init__()
-        self.src_image = self.image = Support.load_image(image, (0, 0, 0))
-        self.position = position
-        self.x, self.y = position
-        self.direction = self.speed = 0
-        self.k_left = self.k_right = self.k_down = self.k_up = 0
-        self.rect = self.src_image.get_rect()
-        self.score = 0
-
-    def update(self):
-        # UPDATES THE SPRITE
-        self.speed = (self.k_up + self.k_down)
-        if self.speed > self.MAX_FORWARD_SPEED:
-            self.speed = self.MAX_FORWARD_SPEED
-        if self.speed < -self.MAX_REVERSE_SPEED:
-            self.speed = -self.MAX_REVERSE_SPEED
-        self._rotate()
-        self.rad = self.direction * math.pi / 180
-        self.x += -self.speed * math.sin(self.rad)
-        self.y += -self.speed * math.cos(self.rad)
-        self.position = (self.x, self.y)
-        self.rect = self.image.get_rect()
-        self.rect.center = self.position
-
-    def _rotate(self):
-        self.direction += (self.k_right + self.k_left)
-        if self.direction > 360 or self.direction < -360:
-            self.direction = 0
-        self.image = pygame.transform.rotate(self.src_image, self.angle - 180)
-
-
-class Shot(pygame.sprite.Sprite):
-    # Sprite for the shots
-    def __init__(self, image, player_pos, mouse_pos, angle, speed):
-        super(Shot, self).__init__()
-        self.image = image
-        self.x, self.y = player_pos
-        self.direction = angle
-        self.speed = speed
-        self.rect = self.image.get_rect()
-        self.target_vector = Support.normalize(Support.sub(mouse_pos, player_pos))
-        self._rotate()
-
-    @property
-    def pos(self):
-        return self.x, self.y
-
-    def _rotate(self):
-        self.image = pygame.transform.rotate(self.image, self.direction)
-
-    def update(self):
-        move_vector = [c * self.speed for c in Support.normalize(self.target_vector)]
-
-        self.x, self.y = Support.add(self.pos, move_vector)
+from components.player import Player
+from components.player import Shot
 
 
 class game(object):
@@ -92,7 +30,7 @@ class game(object):
         button_pressed = pygame.mouse.get_pressed()
         if button_pressed[0]:
             mouse_pos = pygame.mouse.get_pos()
-            self.bullets.add(Shot(self.bullet, self.player.position, mouse_pos, self.player.angle, 10))
+            self.bullets.add(Shot(self.bullet, self.player.pos, mouse_pos, self.player.angle, 10))
 
     def handle_keypress(self, event):
         if event.key == K_ESCAPE:
@@ -170,7 +108,7 @@ class game(object):
         self.player = Player('bluecreep.bmp', position)
         self.running = True
 
-        # Create The Backgound
+        # Create The backgound
         background = Support.load_image("background.bmp")
         backgroundRect = background.get_rect()
 
@@ -188,7 +126,7 @@ class game(object):
                 self.player.score += 1
                 alive = 0
 
-            target_vector = Support.normalize(Support.sub(pygame.mouse.get_pos(), self.player.position))
+            target_vector = Support.normalize(Support.sub(pygame.mouse.get_pos(), self.player.pos))
             aangle = 180 * Support.angle(target_vector, [0, 1]) / math.pi
             if target_vector[0] < 0:
                 aangle *= -1
